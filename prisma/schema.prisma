@@ -38,15 +38,7 @@ model Category {
   products  Product[]
 }
 
-model Order {
-  id        String      @id @default(cuid())
-  userId    String
-  user      User        @relation(fields: [userId], references: [id])
-  amount    Decimal
-  status    OrderStatus @default(PENDING)
-  items     OrderItem[]
-  createdAt DateTime    @default(now())
-}
+
 
 model OrderItem {
   id        String  @id @default(cuid())
@@ -69,4 +61,14 @@ enum OrderStatus {
   SHIPPED
   DELIVERED
   CANCELLED
+}
+
+model Order {
+  id        String      @id @default(cuid())
+  userId    String?     // <--- Added ? to make it optional
+  user      User?       @relation(fields: [userId], references: [id]) // <--- Added ? here too
+  amount    Decimal
+  status    OrderStatus @default(PENDING)
+  items     OrderItem[]
+  createdAt DateTime    @default(now())
 }
