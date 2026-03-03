@@ -3,8 +3,8 @@ const nextConfig = {
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'res.cloudinary.com',
+        protocol: "https",
+        hostname: "**", // The two asterisks mean "allow images from ANY secure website"
       },
     ],
   },

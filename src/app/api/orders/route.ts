@@ -1,28 +1,20 @@
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 
-export async function POST(req: Request) {
+export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   try {
-    const body = await req.json();
-    const { items, amount } = body;
+    const { status } = await req.json();
+    const orderId = params.id;
 
-    const order = await db.order.create({
-      data: {
-        amount: amount,
-        status: "PAID",
-        items: {
-          create: items.map((item: any) => ({
-            productId: item.id,
-            quantity: item.quantity,
-            price: item.price,
-          })),
-        },
-      },
+    // Tell Prisma to find the order by its ID and update its status
+    const updatedOrder = await db.order.update({
+      where: { id: orderId },
+      data: { status: status },
     });
 
-    return NextResponse.json(order);
+    return NextResponse.json(updatedOrder);
   } catch (error) {
-    console.error("Database Error:", error);
-    return NextResponse.json({ error: "Failed to save order" }, { status: 500 });
+    console.error("Failed to update status:", error);
+    return NextResponse.json({ error: "Failed to update status" }, { status: 500 });
   }
 }

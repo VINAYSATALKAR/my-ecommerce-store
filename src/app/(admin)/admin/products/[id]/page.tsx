@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, use } from "react"; // <-- Import 'use' here
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
-export default function AddProductPage() {
+export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params); // <-- NEXT.JS 15 FIX
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -15,33 +17,56 @@ export default function AddProductPage() {
     categoryName: "",
   });
 
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        const res = await fetch(`/api/products/${resolvedParams.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          setFormData({
+            name: data.name,
+            description: data.description,
+            price: data.price.toString(),
+            imageUrl: data.images[0] || "",
+            categoryName: data.category?.name || "",
+          });
+        }
+      } catch (error) {
+        console.error("Failed to fetch product");
+      } finally {
+        setIsFetching(false);
+      }
+    };
+    fetchProduct();
+  }, [resolvedParams.id]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/products", {
-        method: "POST",
+      const response = await fetch(`/api/products/${resolvedParams.id}`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
 
-      if (!response.ok) throw new Error("Failed to create product");
+      if (!response.ok) throw new Error("Failed to update product");
 
-      // Redirect back to the products table and refresh the data
       router.push("/admin/products");
       router.refresh();
     } catch (error) {
-      console.error(error);
-      alert("Something went wrong while saving the product.");
+      alert("Something went wrong while updating the product.");
     } finally {
       setIsLoading(false);
     }
   };
 
+  if (isFetching) return <div className="p-10 text-center font-medium">Loading product data...</div>;
+
   return (
     <div className="container max-w-2xl py-10">
-      <h1 className="text-3xl font-bold tracking-tight mb-8">Add New Product</h1>
+      <h1 className="text-3xl font-bold tracking-tight mb-8">Edit Product</h1>
 
       <form onSubmit={handleSubmit} className="space-y-6 bg-card p-6 rounded-lg border shadow-sm">
         
@@ -61,7 +86,6 @@ export default function AddProductPage() {
           <input 
             required
             type="text"
-            placeholder="e.g. Clothing, Electronics, etc." 
             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
             value={formData.categoryName}
             onChange={(e) => setFormData({...formData, categoryName: e.target.value})}
@@ -85,7 +109,6 @@ export default function AddProductPage() {
           <input 
             required
             type="url"
-            placeholder="https://example.com/image.jpg" 
             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
             value={formData.imageUrl}
             onChange={(e) => setFormData({...formData, imageUrl: e.target.value})}
@@ -107,7 +130,7 @@ export default function AddProductPage() {
             Cancel
           </Button>
           <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Saving..." : "Save Product"}
+            {isLoading ? "Saving..." : "Update Product"}
           </Button>
         </div>
       </form>
